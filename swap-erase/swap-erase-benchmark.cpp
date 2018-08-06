@@ -65,6 +65,21 @@ void swap_erase(std::vector<Object>& v, const Condition& condition) {
     v.erase(iter_to_last, v.end());
 }
 
+// Same as above, but with move instead of swap.
+template<typename Object, typename Condition>
+void move_erase(std::vector<Object>& v, const Condition& condition) {
+    auto iter_to_last = v.end();
+
+    for(auto it = v.begin(); it < iter_to_last; ++it) {
+        if(condition(*it)) {
+            *it = std::move(*(--iter_to_last));
+            --it;
+        }
+    }
+
+    v.erase(iter_to_last, v.end());
+}
+
 void test(std::size_t obj_sz, std::size_t vec_sz, std::string fn) {
     using namespace std;
     using namespace std::chrono;
@@ -95,6 +110,7 @@ void test(std::size_t obj_sz, std::size_t vec_sz, std::string fn) {
     vector<NotSmallObject> v1(vec_sz);
     generate(v1.begin(), v1.end(), [&mt, &obj_sz] () { return move(NotSmallObject(mt, obj_sz)); });
     auto v2 = v1;
+    auto v3 = v1;
 
     auto s1 = high_resolution_clock::now();
 
@@ -116,7 +132,17 @@ void test(std::size_t obj_sz, std::size_t vec_sz, std::string fn) {
     auto e2 = high_resolution_clock::now();
     auto t2 = duration_cast<duration<float>>(e2 - s2).count();
 
-    printf("%10.6f, %10.6f\n", t2, t1/t2);
+    printf("%10.6f, %10.6f, ", t2, t1/t2);
+
+    auto s3 = high_resolution_clock::now();
+
+    // Third test: our move-erase function.
+    move_erase(v3, f);
+
+    auto e3 = high_resolution_clock::now();
+    auto t3 = duration_cast<duration<float>>(e3 - s3).count();
+
+    printf("%10.6f, %10.6f\n", t3, t1/t3);
 }
 
 int main() {
